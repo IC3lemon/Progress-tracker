@@ -1,10 +1,13 @@
-const { Octokit } = require("@octokit/rest");
+import { Octokit } from "@octokit/rest";
+
+import dotenv from "dotenv";
+dotenv.config();
 
 const octokit = new Octokit({
-  auth: '', // github token goes here
+  auth: process.env.GITHUB_TOKEN
 });
 
-async function fetchUserRepos(username) {
+export async function fetchUserRepos(username) {
   try {
     const response = await octokit.rest.repos.listForUser({
       username: username,
@@ -19,7 +22,7 @@ async function fetchUserRepos(username) {
   }
 }
 
-async function fetchUserStars(username) {
+export async function fetchUserStars(username) {
   try {
     const response = await octokit.rest.activity.listReposStarredByUser({
       username: username,
@@ -33,11 +36,11 @@ async function fetchUserStars(username) {
   }
 }
 
-async function fetchUserContributions(username) {
+export async function fetchUserContributions(username) {
   try {
     const response = await octokit.rest.activity.listEventsForUser({
       username: username,
-      per_page: 100, // Adjust as needed
+      per_page: 100,
     });
     return response.data;
   } catch (error) {
@@ -46,7 +49,7 @@ async function fetchUserContributions(username) {
   }
 }
 
-async function fetchUserDetails(username) {
+export async function fetchUserDetails(username) {
   try {
     const response = await octokit.rest.users.getByUsername({
       username: username,
@@ -58,18 +61,18 @@ async function fetchUserDetails(username) {
   }
 }
 
-(async () => {
-  const username = 'IC3lemon'; // put username here nigga
+// (async () => {
+//   const username = 'lakshya1333'; // put username here nigga
 
-  const repos = await fetchUserRepos(username);
-  console.log('Repositories:', repos);
+//   const repos = await fetchUserRepos(username);
+//   console.log('Repositories:', repos);
 
-  const stars = await fetchUserStars(username);
-  console.log('Starred Repositories:', stars);
+//   const stars = await fetchUserStars(username);
+//   console.log('Starred Repositories:', stars);
 
-  const contributions = await fetchUserContributions(username);
-  console.log('Contributions:', contributions);
+//   const contributions = await fetchUserContributions(username);
+//   console.log('Contributions:', contributions);
 
-  const userDetails = await fetchUserDetails(username);
-  console.log('User Details:', userDetails);
-})();
+//   const userDetails = await fetchUserDetails(username);
+//   console.log('User Details:', userDetails);
+// })();
