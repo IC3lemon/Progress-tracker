@@ -57,28 +57,7 @@ const createTables = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS PullRequests (
-        pr_id SERIAL PRIMARY KEY,
-        repo_id INT REFERENCES Repositories(repo_id) ON DELETE CASCADE,
-        user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
-        github_pr_id INT UNIQUE ,
-        title VARCHAR(255) NOT NULL,
-        url VARCHAR(512) NOT NULL,
-        state VARCHAR(50) CHECK (state IN ('open', 'closed', 'merged')),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        merged_at TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS Issues (
-        issue_id SERIAL PRIMARY KEY,
-        repo_id INT REFERENCES Repositories(repo_id) ON DELETE CASCADE,
-        user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
-        github_issue_id INT UNIQUE NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        url VARCHAR(512) NOT NULL,
-        state VARCHAR(50) CHECK (state IN ('open', 'closed')),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+      
     `);
 
     console.log("Tables created successfully!");
