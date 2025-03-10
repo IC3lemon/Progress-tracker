@@ -61,18 +61,63 @@ export async function fetchUserDetails(username) {
   }
 }
 
-// (async () => {
-//   const username = 'lakshya1333'; // put username here nigga
+export async function fetchUserPullRequests(username) { // yeh pr req ko fetch karlega
+  try {
+    const response = await octokit.rest.search.issuesAndPullRequests({
+      q: `author:${username} type:pr`,
+      per_page: 100,
+    });
 
-//   const repos = await fetchUserRepos(username);
-//   console.log('Repositories:', repos);
+    return response.data.items.map(pr => ({
+      title: pr.title,
+      repo: pr.repository_url.split("/").slice(-2).join("/"),
+      url: pr.html_url,
+      state: pr.state,
+      created_at: pr.created_at,
+      merged_at: pr.pull_request?.merged_at || null,
+    }));
+  } catch (error) {
+    console.error("Error fetching user pull requests:", error);
+    return [];
+  }
+}
 
-//   const stars = await fetchUserStars(username);
-//   console.log('Starred Repositories:', stars);
+export async function fetchUserIssues(username) { // yeh user ke created sare issue ko fetch karlega
+  try {
+    const response = await octokit.rest.search.issuesAndPullRequests({
+      q: `author:${username} type:issue`,
+      per_page: 100,
+    });
 
-//   const contributions = await fetchUserContributions(username);
-//   console.log('Contributions:', contributions);
+    return response.data.items.map(issue => ({
+      title: issue.title,
+      repo: issue.repository_url.split("/").slice(-2).join("/"),
+      url: issue.html_url,
+      state: issue.state,
+      created_at: issue.created_at,
+    }));
+  } catch (error) {
+    console.error("Error fetching user issues:", error);
+    return [];
+  }
+}
 
-//   const userDetails = await fetchUserDetails(username);
-//   console.log('User Details:', userDetails);
-// })();
+export async function fetchUserCommits(username) { // yeh commit match karega
+  try {
+    const response = await octokit.rest.search.commits({
+      q: `author:${username}`,
+      per_page: 100,
+    });
+
+    return response.data.items.map(commit => ({
+      message: commit.commit.message,
+      repo: commit.repository.full_name,
+      url: commit.html_url,
+      date: commit.commit.author.date,
+    }));
+  } catch (error) {
+    console.error("Error fetching user commits:", error);
+    return [];
+  }
+}
+

@@ -5,9 +5,13 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "outDir": "dist",    // Ensure compiled files go to dist/
+    "rootDir": "src",    // Source files are inside src/
+    "noEmit": false,     // Allow TypeScript to generate files
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ESNext",
+    "strict": true,
+    "jsx": "react-jsx"
   }
 }
