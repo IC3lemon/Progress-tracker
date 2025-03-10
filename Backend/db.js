@@ -8,7 +8,7 @@ const pool = new Pool({
   host: process.env.host,
   database: process.env.database,
   password: process.env.password,
-  port: process.env.port,
+  port: process.env.port
 });
 
 const createTables = async () => {
@@ -34,7 +34,7 @@ const createTables = async () => {
 
       CREATE TABLE IF NOT EXISTS Repositories (
         repo_id SERIAL PRIMARY KEY,
-        user_id INT REFERENCES Users(user_id),
+        user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
         github_repo_id INT UNIQUE NOT NULL,
         name VARCHAR(255) NOT NULL,
         description TEXT,
@@ -47,8 +47,40 @@ const createTables = async () => {
         updated_at TIMESTAMP,
         pushed_at TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS Commits (
+        commit_id SERIAL PRIMARY KEY,
+        repo_id INT REFERENCES Repositories(repo_id) ON DELETE CASCADE,
+        user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+        message TEXT NOT NULL,
+        url VARCHAR(512) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS PullRequests (
+        pr_id SERIAL PRIMARY KEY,
+        repo_id INT REFERENCES Repositories(repo_id) ON DELETE CASCADE,
+        user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+        github_pr_id INT UNIQUE ,
+        title VARCHAR(255) NOT NULL,
+        url VARCHAR(512) NOT NULL,
+        state VARCHAR(50) CHECK (state IN ('open', 'closed', 'merged')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        merged_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS Issues (
+        issue_id SERIAL PRIMARY KEY,
+        repo_id INT REFERENCES Repositories(repo_id) ON DELETE CASCADE,
+        user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+        github_issue_id INT UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        url VARCHAR(512) NOT NULL,
+        state VARCHAR(50) CHECK (state IN ('open', 'closed')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
-    ///Tu baki ka add kardena sabh i am done follow the scheme i wrote for all other endpoints
+
     console.log("Tables created successfully!");
   } catch (err) {
     console.error("Error creating tables:", err);

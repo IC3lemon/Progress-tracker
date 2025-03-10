@@ -1,5 +1,10 @@
 const Login = () => {
 
+
+  function handlelogin(){
+      window.location.href = "http://127.0.0.1:3000/auth/github/callback";
+  }
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center px-4">
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transform transition-all hover:scale-105">
@@ -9,7 +14,7 @@ const Login = () => {
         </div>
 
         <div className="space-y-6">
-          <button 
+          <button onClick={handlelogin} 
             className="w-full flex items-center justify-center gap-3 bg-gray-900 hover:bg-gray-800 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
           >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
