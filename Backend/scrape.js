@@ -15,7 +15,6 @@ export async function fetchUserRepos(username) {
       sort: 'updated',
       direction: 'desc',
     });
-    console.log(data)
     return response.data;
   } catch (error) {
     console.error('Error fetching user repositories:', error);

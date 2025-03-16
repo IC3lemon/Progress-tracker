@@ -130,16 +130,15 @@ passport.use(
           if (repoCheck.rows.length === 0) {
             await client.query(
               `INSERT INTO Repositories (
-                user_id, github_repo_id, name, description, html_url,
+                user_id, github_repo_id, name, description,
                 stargazers_count, forks_count, open_issues_count, language,
                 size, created_at, updated_at, pushed_at
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
               [
                 user.user_id,
                 repo.id,
                 repo.name,
                 repo.description,
-                repo.html_url,
                 repo.stargazers_count,
                 repo.forks_count,
                 repo.open_issues_count,
