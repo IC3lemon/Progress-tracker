@@ -38,8 +38,6 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, '../Frontend/dist')));
 
 
-
-
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret',
   resave: false, 
@@ -169,24 +167,38 @@ passport.use(
         for (const repo of repos) {
           const [owner, repoName] = repo.full_name.split('/');
         
-          // 1. Populate RepositoryLanguages
+          const repoIdRes = await client.query(
+            "SELECT repo_id FROM Repositories WHERE github_repo_id = $1",
+            [repo.id]
+          );
+
+          if (repoIdRes.rows.length === 0) {
+            console.warn(`Repo with github_repo_id ${repo.id} not found in DB.`);
+            continue;
+          }
+
+          const repoId = repoIdRes.rows[0].repo_id;
+
+          // Proceed to insert languages
           const langs = await fetchRepoLanguages(owner, repo.name);
           const total = Object.values(langs).reduce((a, b) => a + b, 0);
+
           for (const [language, bytes] of Object.entries(langs)) {
             await client.query(
               `INSERT INTO RepositoryLanguages (repo_id, language, percentage)
-               VALUES ($1, $2, $3)
-               ON CONFLICT (repo_id, language) DO UPDATE 
-               SET percentage = EXCLUDED.percentage, updated_at = NOW()`,
-              [repo.id, language, (bytes / total) * 100]
+              VALUES ($1, $2, $3)
+              ON CONFLICT (repo_id, language) DO UPDATE 
+              SET percentage = EXCLUDED.percentage, updated_at = NOW()`,
+              [repoId, language, (bytes / total) * 100]
             );
           }
+
         
-          // 2. Populate Contributors
+        
           const contributors = await fetchRepoContributors(owner, repo.name);
           for (const contrib of contributors) {
             const res = await client.query("SELECT user_id FROM Users WHERE github_id = $1", [contrib.id]);
-            if (res.rows.length === 0) continue; // skip non-auth users
+            if (res.rows.length === 0) continue; 
         
             await client.query(
               `INSERT INTO Contributors (repo_id, user_id, contributions)
@@ -197,7 +209,7 @@ passport.use(
             );
           }
         
-          // 3. Populate PullRequests
+          
           const prs = await fetchRepoPullRequests(owner, repo.name);
           for (const pr of prs) {
             const initiator = await client.query("SELECT user_id FROM Users WHERE github_id = $1", [pr.user.id]);
@@ -222,14 +234,13 @@ passport.use(
               ]
             );
         
-            // Optionally populate PullRequestChanges if you can get the files
-            // You may use `octokit.rest.pulls.listFiles` here
+            
           }
         
-          // 4. Populate Issues
+          
           const issues = await fetchRepoIssues(owner, repo.name);
           for (const issue of issues) {
-            if (issue.pull_request) continue; // Skip PRs
+            if (issue.pull_request) continue; 
         
             const creator = await client.query("SELECT user_id FROM Users WHERE github_id = $1", [issue.user.id]);
             await client.query(
