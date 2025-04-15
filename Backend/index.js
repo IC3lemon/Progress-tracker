@@ -167,33 +167,6 @@ passport.use(
         for (const repo of repos) {
           const [owner, repoName] = repo.full_name.split('/');
         
-          const repoIdRes = await client.query(
-            "SELECT repo_id FROM Repositories WHERE github_repo_id = $1",
-            [repo.id]
-          );
-
-          if (repoIdRes.rows.length === 0) {
-            console.warn(`Repo with github_repo_id ${repo.id} not found in DB.`);
-            continue;
-          }
-
-          const repoId = repoIdRes.rows[0].repo_id;
-
-          // Proceed to insert languages
-          const langs = await fetchRepoLanguages(owner, repo.name);
-          const total = Object.values(langs).reduce((a, b) => a + b, 0);
-
-          for (const [language, bytes] of Object.entries(langs)) {
-            await client.query(
-              `INSERT INTO RepositoryLanguages (repo_id, language, percentage)
-              VALUES ($1, $2, $3)
-              ON CONFLICT (repo_id, language) DO UPDATE 
-              SET percentage = EXCLUDED.percentage, updated_at = NOW()`,
-              [repoId, language, (bytes / total) * 100]
-            );
-          }
-
-        
         
           const contributors = await fetchRepoContributors(owner, repo.name);
           for (const contrib of contributors) {
