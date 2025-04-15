@@ -166,6 +166,90 @@ passport.use(
           );
         }
 
+        for (const repo of repos) {
+          const [owner, repoName] = repo.full_name.split('/');
+        
+          // 1. Populate RepositoryLanguages
+          const langs = await fetchRepoLanguages(owner, repo.name);
+          const total = Object.values(langs).reduce((a, b) => a + b, 0);
+          for (const [language, bytes] of Object.entries(langs)) {
+            await client.query(
+              `INSERT INTO RepositoryLanguages (repo_id, language, percentage)
+               VALUES ($1, $2, $3)
+               ON CONFLICT (repo_id, language) DO UPDATE 
+               SET percentage = EXCLUDED.percentage, updated_at = NOW()`,
+              [repo.id, language, (bytes / total) * 100]
+            );
+          }
+        
+          // 2. Populate Contributors
+          const contributors = await fetchRepoContributors(owner, repo.name);
+          for (const contrib of contributors) {
+            const res = await client.query("SELECT user_id FROM Users WHERE github_id = $1", [contrib.id]);
+            if (res.rows.length === 0) continue; // skip non-auth users
+        
+            await client.query(
+              `INSERT INTO Contributors (repo_id, user_id, contributions)
+               VALUES ($1, $2, $3)
+               ON CONFLICT (repo_id, user_id)
+               DO UPDATE SET contributions = $3, updated_at = NOW()`,
+              [repo.id, res.rows[0].user_id, contrib.contributions]
+            );
+          }
+        
+          // 3. Populate PullRequests
+          const prs = await fetchRepoPullRequests(owner, repo.name);
+          for (const pr of prs) {
+            const initiator = await client.query("SELECT user_id FROM Users WHERE github_id = $1", [pr.user.id]);
+            const merger = pr.merged_by
+              ? await client.query("SELECT user_id FROM Users WHERE github_id = $1", [pr.merged_by.id])
+              : { rows: [{ user_id: null }] };
+        
+            const prRes = await client.query(
+              `INSERT INTO PullRequests (
+                repo_id, title, description, state, created_at, updated_at, merged_at, initiator_id, merger_id
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING pr_id`,
+              [
+                repo.id,
+                pr.title,
+                pr.body,
+                pr.state,
+                pr.created_at,
+                pr.updated_at,
+                pr.merged_at,
+                initiator.rows[0]?.user_id || null,
+                merger.rows[0]?.user_id || null,
+              ]
+            );
+        
+            // Optionally populate PullRequestChanges if you can get the files
+            // You may use `octokit.rest.pulls.listFiles` here
+          }
+        
+          // 4. Populate Issues
+          const issues = await fetchRepoIssues(owner, repo.name);
+          for (const issue of issues) {
+            if (issue.pull_request) continue; // Skip PRs
+        
+            const creator = await client.query("SELECT user_id FROM Users WHERE github_id = $1", [issue.user.id]);
+            await client.query(
+              `INSERT INTO Issues (
+                repo_id, title, description, state, created_at, updated_at, closed_at, creator_id
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [
+                repo.id,
+                issue.title,
+                issue.body,
+                issue.state,
+                issue.created_at,
+                issue.updated_at,
+                issue.closed_at,
+                creator.rows[0]?.user_id || null,
+              ]
+            );
+          }
+        }
+        
         const commits = await fetchUserCommits(profile.username);
 
         for (const commit of commits) {  
